@@ -1,0 +1,69 @@
+#!/usr/bin/env bash
+
+if [ $# -ne 2 ]; then
+    echo "Usage: `basename $0` <name> [up|down|status]"
+    exit 2
+fi
+
+TUNNEL="$1"
+
+# Define all tunnels in this file
+source $HOME/.tunnels
+
+TUNNEL_CMD="${TUNNELS[$TUNNEL]}"
+if [ -z "$TUNNEL_CMD" ]; then
+  echo "No tunnel by that name"
+  exit 2
+fi
+
+PID=`ps aux | pgrep -f "$TUNNEL_CMD"`
+
+case "$2" in
+
+up) 
+    if [[ ! $PID =~ [0-9] ]]; then 
+        eval $TUNNEL_CMD
+        if [[ $? -eq 0 ]]; then
+            printf "\n$TUNNEL tunnel is up\n"
+            printf "Listening on port $(echo "$TUNNEL_CMD" | sed -n 's/^ssh\s.*\s-L\s\([0-9]\{4\}\):.*:[0-9]\{4\}\s.*$/\1/p')\n"
+        else
+            printf "\nTunnel failed - check the ssh command in ~/.tunnels\n"
+        fi
+    else
+        printf "\n$TUNNEL tunnel is already up\n"
+    fi
+    ;;
+
+down) 
+    if [[ $PID =~ [0-9] ]]; then
+        kill -2 $PID
+        sleep 1
+        PID=`ps aux | pgrep -f "$TUNNEL_CMD"`
+        if [[ $PID =~ [0-9] ]]; then
+            printf "\n$TUNNEL tunnel is still up. Kill the process manually or try again.\n"
+        else
+            printf "\n$TUNNEL tunnel is down\n"
+        fi
+    
+    else
+        printf "\n$TUNNEL tunnel doesn't look like it's up. Check the tunnel name.\n"
+    fi
+    ;;
+
+status)
+    if [[ $PID =~ [0-9] ]]; then
+        printf "\n$TUNNEL tunnel is up\n"
+        printf "Listening on port $(echo "$TUNNEL_CMD" | sed -n 's/^ssh\s.*\s-L\s\([0-9]\{4\}\):.*:[0-9]\{4\}\s.*$/\1/p')\n"
+    else
+        printf "\n$TUNNEL tunnel is down\n"
+    fi
+    ;;
+
+*)
+    printf "\nInvalid option\n"
+    printf "\nUsage: tunnel <name> [up|down|status]\n"
+    ;;
+
+esac
+
+

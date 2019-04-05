@@ -1,0 +1,7 @@
+#!/usr/bin/env bash
+
+# Format: TUNNELS[<tunnel_name]="ssh -N -q -f -L <local_port>:<remote_endpoint>:<remote_port> <jump_host>"
+
+declare -A TUNNELS
+TUNNELS[production]="ssh -N -q -f -L 9999:db.production.example.local:5432 1.1.1.1"
+TUNNELS[staging]="ssh -N -q -f -L 9998:db.staging.example.local:5432 1.1.2.1"
